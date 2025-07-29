@@ -20,8 +20,11 @@ exports.signup=async(req,res)=>{
         const hashedPassword=await bcrypt.hash(req.body.password,10)
         req.body.password=hashedPassword
 
-        // creating new user
-        const createdUser=new User(req.body)
+        // creating new user with auto-verification in development
+        const createdUser=new User({
+            ...req.body,
+            isVerified: process.env.PRODUCTION === 'false' ? true : false
+        })
         await createdUser.save()
 
         // getting secure user info
@@ -41,7 +44,8 @@ exports.signup=async(req,res)=>{
         res.status(201).json(sanitizeUser(createdUser))
 
     } catch (error) {
-        console.log(error);
+        // Log error safely without exposing sensitive data
+        console.log('Signup error:', error.message);
         res.status(500).json({message:"Error occured during signup, please try again later"})
     }
 }
@@ -73,7 +77,7 @@ exports.login=async(req,res)=>{
         res.clearCookie('token');
         return res.status(404).json({message:"Invalid Credentails"})
     } catch (error) {
-        console.log(error);
+        console.log('Login error:', error.message);
         res.status(500).json({message:'Some error occured while logging in, please try again later'})
     }
 }
